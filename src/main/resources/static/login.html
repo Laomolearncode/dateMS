@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>登录 - 日程管理系统</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+            font-family: Arial, sans-serif;
+        }
+        .login-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 300px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .error-message {
+            color: red;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2 style="text-align: center;">日程管理系统</h2>
+        <div class="form-group">
+            <label for="username">用户名：</label>
+            <input type="text" id="username" name="username">
+        </div>
+        <div class="form-group">
+            <label for="password">密码：</label>
+            <input type="password" id="password" name="password">
+        </div>
+        <button onclick="login()">登录</button>
+        <div id="error-message" class="error-message"></div>
+    </div>
+
+    <script>
+        async function login() {
+            try {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                const errorMessage = document.getElementById('error-message');
+
+                console.log('Starting login process...');
+                console.log('Login data:', { username, password });
+
+                // 显示错误信息的辅助函数
+                const showError = (message) => {
+                    errorMessage.textContent = message;
+                    errorMessage.style.display = 'block';
+                };
+
+                if (!username || !password) {
+                    showError('用户名和密码不能为空');
+                    return;
+                }
+
+                console.log('Sending fetch request...');
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+
+                console.log('Received response:', response);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (data.code === 200) {
+                    console.log('Login successful');
+                    localStorage.setItem('token', data.data.token);
+                    console.log('Token saved:', data.data.token);
+                    
+                    if (data.data.role === 'teacher') {
+                        console.log('Redirecting to teacher page...');
+                        window.location.href = '/teacher.html';
+                    } else if (data.data.role === 'admin') {
+                        console.log('Redirecting to admin page...');
+                        window.location.href = '/admin.html';
+                    }
+                } else {
+                    showError(data.message || '登录失败');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorMessage.textContent = '登录失败，请稍后重试';
+                errorMessage.style.display = 'block';
+            }
+        }
+
+        // 添加回车键登录支持
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        login();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html> 
